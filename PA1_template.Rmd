@@ -1,0 +1,109 @@
+# Reproducible Research peer assessment 1
+## Load the data 
+```{r,echo=TRUE}
+data=read.csv("activity.csv")
+```
+### What the data is ! 
+```{r}
+summary(data)
+```
+
+## What is mean total number of steps taken per day?
+### 1.Calculate the total number of steps taken per day
+```{r}
+da=with(data,aggregate(steps,by=list(date=date),sum,na.rm=T))
+```
+#### We can know the the total number of steps taken per day is :
+```{r}
+da
+```
+
+###  2.If you do not understand the difference between a histogram and a barplot, research the difference between them. Make a histogram of the total number of steps taken each day.
+```{r}
+hist(da$x,main="Histogram of the total number of steps taken each day",xlab="Total number of steps")
+```
+
+###  3.Calculate and report the mean and median of the total number of steps taken per day
+####  We can use the aggregate calculate the mean and median,so:
+
+```{r}
+mean.median=with(data[!is.na(data$steps),],aggregate(steps,by=list(date=date),function(x){c(mean=mean(x,na.rm=T),median=median(x,na.rm=T))}))
+````
+
+####  So the mean and median of the total number of steps taken per day is :
+```{r}
+mean.median
+```
+
+## What is the average daily activity pattern?
+
+#### 1.Calculate the   5-minute interval  the average number of steps taken:
+```{r}
+interval.5=with(data,aggregate(steps,by=list(interval=interval),mean,na.rm=T))
+```
+####  Then ,plot the series  plot
+```{r}
+plot( interval.5,type='l',ylab="steps",main="The average number of steps ")
+```
+
+#### 2.The 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps record is :`r data[which(data$steps==max(data$steps,na.rm=T)),]`
+
+
+## Imputing missing values
+### 1. we can know the total number of rows with NAs is : `r sum(is.na(data$steps))`
+
+### 2.Devise a strategy for filling in all of the missing values in the dataset with the mean of  5-minute interval
+#### So,we can Create a new dataset that is equal to the original dataset but with the missing data filled in with the mean of 5-minute interval
+
+```{r}
+na.label=which(is.na(data$steps))
+new.data=data
+na.values=sapply(data$interval[na.label],function(x,data2){data2$x[data2$interval==x]},data2=interval.5)
+new.data$steps[na.label]=na.values
+```
+### 3.Make a histogram of the total number of steps taken each day
+```{r}
+steps.day=with(new.data,aggregate(steps,by=list(date=date),sum,na.rm=T))
+hist(steps.day$x,main="The total number of steps taken each day",xlab="steps")
+```
+
+### The mean and median total number of steps taken per day
+```{r}
+new.mean.median=with(new.data,aggregate(steps,by=list(date=date),function(x){c(mean=mean(x),median=median(x))}))
+```
+#### we can see the mean and median is :
+```{r}
+new.mean.median
+
+```
+
+#### So ,we can know  these values differ from the estimates from the first part of the assignment
+
+#### So,we can know the impact of imputing missing data on the estimates of the total daily number of steps that the devices maybe not work or the devices is left out from the body.
+
+## Are there differences in activity patterns between weekdays and weekends?
+```{r}
+week.label=weekdays(seq(as.Date("2011-01-01"),as.Date("2011-01-07"),by=1))
+
+new.data$week=sapply(weekdays(as.Date(new.data$date)),
+                     function(x){if(x %in% week.label[3:7])
+                               return("weekday")
+                               else
+                              return("weekend")})
+
+```
+#### Calculate the 5-minute interval  the average number of steps taken
+```{r}
+week.steps=with(new.data,aggregate(steps,by=list(interval=interval,week=week),mean))
+library(lattice)
+
+```
+
+#### Make a panel plot containing a time series plot is :
+```{r}
+xyplot(x~interval|week,data=week.steps,layout=c(1,2),ylab=" number of steps ",type='l')
+```
+
+
+
+
